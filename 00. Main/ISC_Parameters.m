@@ -30,7 +30,7 @@ gamma1 = 0.002;         %s/rad        volumetric efficiency, speed part, slope, 
 eta0 = 0.3;             %-            Willans efficiency offset, TEMP (Engine Torque Generation)
 eta1 = -3e-4;           %s/rad        Willans efficiency slope, TEMP (Engine Torque Generation)
 beta0 = 7;              %Nm           friction torque, TEMP (Engine Torque Generation)
-Theta = 0.2;            %kg*m^2       engine inertia, TEMP (Engine Inertia)
+Theta_e = 0.2;            %kg*m^2       engine inertia, TEMP (Engine Inertia)
 
 %% --- Initial conditions of the dynamic blocks (PROPOSAL, to be agreed by the group)
 pm_init = 3e4;          %Pa           intake manifold pressure (Intake Manifold)
@@ -38,10 +38,19 @@ w_init = 100;           %rad/s        engine speed (Engine Inertia)
 q_init = 3e-5;          %kg/rad       initial output of the IPS delay, mdot_beta/omega_e (Engine Torque Generation)
 du_init = 0;            %degCA        initial output of the ignition delay (Engine Torque Generation)
 theta_a = 298;          %K            ambient temperature
-p_a = 101325;           %Pa           ambient pressure
+p_a = 100000;           %Pa           ambient pressure
+theta_m = theta_a;      %K            NOT FIX, ONLY GUESS
+p_e = 99800;            %Pa           NOT FIX, ONLY GUESS
+theta_e = theta_a;      %K            NOT FIX, ONLY GUESS
+omega_e0 = 700;         %rad/s        NOT FIX, ONLY GUESS
+p_m0 = 100000;          %Pa           NOT FIX, ONLY GUESS
 
 %% --- Speed limits (manual 2.3.7: avoid physically meaningless speeds during identification)
 w_min = 20;             %rad/s        lower saturation of the engine speed
 w_max = 500;            %rad/s        upper saturation of the engine speed
 
 %% --- Controller design (milestone 3): add the variables here when they exist
+
+u_l = 0;                % on/off signal 1 or 0
+P_l = 100;              % kW load power
+
