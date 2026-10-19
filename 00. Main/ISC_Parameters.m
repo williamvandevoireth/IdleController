@@ -18,7 +18,7 @@ sigma0 = 14.7;          %-            stoichiometric air/fuel ratio, table value
 kappa = 1.35;           %-            exponent of the volumetric efficiency, pressure part (Engine Air Mass Flow)
 lambda = 1;             %-            air/fuel ratio, kept at 1 (Engine Air Mass Flow, Engine Torque Generation)
 Hl = 42.5e6;            %J/kg         lower heating value of gasoline (Engine Torque Generation)
-kzeta = 2.3345e-4;      %1/(degCA)^2  ignition efficiency coefficient, given (Engine Torque Generation)
+k_zeta = 2.3345e-4;      %1/(degCA)^2  ignition efficiency coefficient, given (Engine Torque Generation)
 eta_gen = 0.7;          %-            generator efficiency (Load Torque, valid for 70-200 rad/s)
 
 %% --- Parameters to identify: initial guesses (TEMP)
@@ -37,6 +37,8 @@ pm_init = 3e4;          %Pa           intake manifold pressure (Intake Manifold)
 w_init = 100;           %rad/s        engine speed (Engine Inertia)
 q_init = 3e-5;          %kg/rad       initial output of the IPS delay, mdot_beta/omega_e (Engine Torque Generation)
 du_init = 0;            %degCA        initial output of the ignition delay (Engine Torque Generation)
+theta_a = 298;          %K            ambient temperature
+p_a = 101325;           %Pa           ambient pressure
 
 %% --- Speed limits (manual 2.3.7: avoid physically meaningless speeds during identification)
 w_min = 20;             %rad/s        lower saturation of the engine speed
