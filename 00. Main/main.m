@@ -41,7 +41,7 @@ data.ts.P_l     = timeseries(meas.P_l.signals.values(:), data.t);   % W    load 
 % inports of Engine_Plant: port 1 = u_alpha [%] (throttle), port 2 = delta_u [degCA] (ignition)
 data.ext_in = [data.t, meas.u_alpha.signals.values(:), meas.du_ign.signals.values(:)];
 
-simcfg = struct('Ts',Ts, 'stop_time',data.t(end));   % stop_time: simulate over the whole recording
+simcfg = struct('Ts',Ts, 'stop_time',data.t(end), 'omega_meas',0);   % stop_time: simulate over the whole recording
 
 %% --- Initial conditions from the first sample of the recording (overrides the idle-point proposal)
 % Otherwise the start-up transient between the proposal and the measured state enters the identification cost.
