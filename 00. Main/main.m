@@ -38,10 +38,20 @@ data.ts.p_e     = timeseries(meas.p_e.signals.values(:), data.t);   % Pa   exhau
 data.ts.u_l     = timeseries(meas.u_l.signals.values(:), data.t);   % 1/0  load on/off
 data.ts.P_l     = timeseries(meas.P_l.signals.values(:), data.t);   % W    load power
 
-% inports: port 1 = delta_u [degCA] (ignition), port 2 = u_alpha [%] (throttle)
-data.ext_in = [data.t, meas.du_ign.signals.values(:), meas.u_alpha.signals.values(:)];
+% inports of Engine_Plant: port 1 = u_alpha [%] (throttle), port 2 = delta_u [degCA] (ignition)
+data.ext_in = [data.t, meas.u_alpha.signals.values(:), meas.du_ign.signals.values(:)];
 
 simcfg = struct('Ts',Ts, 'stop_time',data.t(end));   % stop_time: simulate over the whole recording
+
+%% --- Initial conditions from the first sample of the recording (overrides the idle-point proposal)
+% Otherwise the start-up transient between the proposal and the measured state enters the identification cost.
+init.omega_e0 = meas.omega_e.signals.values(1);   % rad/s
+init.p_m0     = meas.p_m.signals.values(1);       % Pa
+init.du_init  = meas.du_ign.signals.values(1);    % degCA
+pe1 = meas.p_e.signals.values(1);  Tm1 = meas.T_m.signals.values(1);
+lam_lp1 = (Vc+Vd)/Vd - (Vc/Vd)*(pe1/init.p_m0)^(1/kappa);
+init.q_init = init.p_m0*Vd/(4*pi*R*Tm1)*lam_lp1*(gamma0+gamma1*init.omega_e0)/(1+1/(lambda*sigma0));   % kg/rad  mdot_beta/omega_e
+clear pe1 Tm1 lam_lp1
 
 %% --- Remove the plain variables, only the structs stay
 clear R Vd Vc sigma0 kappa lambda Hl k_zeta eta_gen
