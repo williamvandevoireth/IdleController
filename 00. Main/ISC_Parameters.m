@@ -49,3 +49,8 @@ w_max = 500;            %rad/s        upper saturation of the engine speed
 tau_max = 2*pi/w_min;   %s            longest transport delay (IPS delay at w_min), Maximum delay of the 3 Variable Transport Delay blocks (Engine Torque Generation)
 
 %% --- Controller design (milestone 3): add the variables here when they exist
+%% Normalization Constants
+
+delta_u_nom = 1; 
+u_alpha_nom = 1;
+omega_e_nom = 1;
