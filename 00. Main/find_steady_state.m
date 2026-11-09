@@ -7,8 +7,10 @@ p_a_nom     = mean(data.meas.p_a.signals.values);
 theta_m_nom = mean(data.meas.T_m.signals.values);
 p_e_nom     = mean(data.meas.p_e.signals.values);
 
-delta_u = -10;    % degCA, nonzero
+delta_u = -7;    % degCA, nonzero
 u_alpha = 2.5;    % %, tune until omega_e is flat
+delta_u_nom = delta_u;
+u_alpha_nom = u_alpha;
 
 % steady-state simulation
 load_system(model)
@@ -24,14 +26,14 @@ for name = {'omega_e','mdot_beta','p_m'}
 end
 
 out = sim(model);
-omega_nom     = out.logsout.get('omega_e').Values.Data(end);
+omega_e_nom   = out.logsout.get('omega_e').Values.Data(end);
 mdot_beta_nom = out.logsout.get('mdot_beta').Values.Data(end);
 p_m_nom       = out.logsout.get('p_m').Values.Data(end);
-Q_nom         = mdot_beta_nom/omega_nom;
+Q_nom         = mdot_beta_nom/omega_e_nom;
 
 % pade approximation of the two delays
-tau_IPS = 2*pi/omega_nom;
-tau_seg = 2*pi/(5*omega_nom);    % half segment, the delay applied to delta_u
+tau_IPS = 2*pi/omega_e_nom;
+tau_seg = 2*pi/(5*omega_e_nom);    % half segment, the delay applied to delta_u
 
 [num1,den1] = pade(tau_IPS,4);
 [A1,B1,C1,D1] = tf2ss(num1,den1);
@@ -48,7 +50,7 @@ disp('Check, both must be 1:')
 disp([C1*x0_1 + D1, C2*x0_2 + D2])
 
 disp('Normalization values:')
-table(omega_nom, u_alpha, delta_u, Q_nom, p_m_nom)
+table(omega_e_nom, u_alpha, delta_u, Q_nom, p_m_nom)
 
 % linearization (set build_done = true when the normalized model is built)
 build_done = false;
