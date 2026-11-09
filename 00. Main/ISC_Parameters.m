@@ -51,8 +51,8 @@ tau_max = 2*pi/w_min;   %s            longest transport delay (IPS delay at w_mi
 %% --- Controller design (milestone 3): add the variables here when they exist
 %% Normalization Constants
 
-delta_u_nom = 1; 
-u_alpha_nom = 1;
+delta_u_nom = 0;        % delta_u is zero under nominal conditions ==> should correspond to approximately 8°CA
+u_alpha_nom = 0.025;    % 2.5% opened
 omega_e_nom = 1;
 theta_a_nom = 1;
 p_a_nom = 1;
