@@ -54,3 +54,7 @@ tau_max = 2*pi/w_min;   %s            longest transport delay (IPS delay at w_mi
 delta_u_nom = 1; 
 u_alpha_nom = 1;
 omega_e_nom = 1;
+theta_a_nom = 1;
+p_a_nom = 1;
+theta_m_nom = 1;
+p_m_nom = 1;
