@@ -10,7 +10,7 @@ if ~isfile('ident_fit.mat'), error('ident_fit.mat not found: run ParID.m (sectio
 P.initial = ident;                          % manual initial guesses
 P.fitted  = load('ident_fit.mat').ident;    % result of ParID.m
 sets  = fieldnames(P);
-files = {'dynamic_0002','dynamic_0003'};    % 0002 = used for fitting, 0003 = validation (never fitted)
+files = {'studentId_0002','studentId_0003'};    % 0002 = used for fitting, 0003 = validation (never fitted)
 mdl = 'Engine_Plant';  load_system(mdl);
 
 fprintf('\n%-14s %-9s %16s %14s\n','data','params','RMSE omega_e','RMSE p_m');

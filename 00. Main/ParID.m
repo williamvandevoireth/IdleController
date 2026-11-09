@@ -2,7 +2,7 @@
 main;
 
 %% 1. Throttle: alpha0, alpha1
-q  = load('../ISCSData/quasistatic_0001.mat').meas;   % quasistatic measurement, all N samples
+q  = load('../ISCSData/studentId_0002.mat').meas;   % quasistatic measurement, all N samples
 ua = q.u_alpha.signals.values(:);      md = q.m_dot_alpha.signals.values(:);
 Ta = q.T_a.signals.values(:);          pa = q.p_a.signals.values(:);
 pm = q.p_m.signals.values(:);          pe = q.p_e.signals.values(:);

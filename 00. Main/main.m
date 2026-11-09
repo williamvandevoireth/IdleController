@@ -10,7 +10,7 @@
 %   data       measurement data                                   (meas, t, ext_in, ts.*)
 clear
 
-data_name = 'dynamic_0002';   % file name without .mat
+data_name = 'studentId_0003';   % file name without .mat
 
 main_dir = fileparts(mfilename('fullpath'));
 cd(main_dir)
