@@ -3,14 +3,22 @@ model = 'Engine_Plant_SteadyState';
 
 % nominal inputs
 theta_a_nom = mean(data.meas.T_a.signals.values);
+disp('theta_a_nom:')
+disp(theta_a_nom)
 p_a_nom     = mean(data.meas.p_a.signals.values);
+disp('p_a_nom:')
+disp(p_a_nom)
 theta_m_nom = mean(data.meas.T_m.signals.values);
+disp('theta_m_nom:')
+disp(theta_m_nom)
 p_e_nom     = mean(data.meas.p_e.signals.values);
+disp('p_e_nom:')
+disp(p_e_nom)
 
 delta_u = 1;
 u_alpha = 1;
-delta_u_nom = -7;    % degCA, nonzero
-u_alpha_nom = 2.5;    % %, tune until omega_e is flat
+delta_u_nom = -7;    %  [°CA] nonzero
+u_alpha_nom = 2.5;    % [%] tune until omega_e is flat
 
 % steady-state simulation
 load_system(model)
@@ -27,9 +35,17 @@ end
 
 out = sim(model);
 omega_e_nom   = out.logsout.get('omega_e').Values.Data(end);
+disp('omega_e_nom:')
+disp(omega_e_nom)
 mdot_beta_nom = out.logsout.get('mdot_beta').Values.Data(end);
+disp('mdot_beta_nom:')
+disp(mdot_beta_nom)
 p_m_nom       = out.logsout.get('p_m').Values.Data(end);
+disp('p_m_nom:')
+disp(p_m_nom)
 Q_nom         = mdot_beta_nom/omega_e_nom;
+disp('Q_nom:')
+disp(Q_nom)
 
 % pade approximation of the two delays
 tau_IPS = 2*pi/omega_e_nom;
@@ -63,3 +79,5 @@ disp('Sizes (expect 10x10, 10x2, 1x10, 1x2):')
 disp([size(A) size(B) size(C) size(D)])
 disp(cond(A))
 step(ss(A,B,C,D))
+
+
