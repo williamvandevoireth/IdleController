@@ -7,11 +7,12 @@
 % Before running: main.m must contain  data_name = 'studentId_0003';
 
 %% 0. Load parameters and studentId_0003
+addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
 main;
 Tfit = 60;                               % s  fit window [0, Tfit], validation window (Tfit, end]
 
 %% 1. Throttle: alpha0, alpha1 (linear least squares)
-q  = load('../ISCSData/studentId_0002.mat').meas;
+q  = load(fullfile(fileparts(which('main')),'..','..','ISCSData','studentId_0002.mat')).meas;
 ua = q.u_alpha.signals.values(:);      md = q.m_dot_alpha.signals.values(:);
 Ta = q.T_a.signals.values(:);          pa = q.p_a.signals.values(:);
 pm = q.p_m.signals.values(:);          pe = q.p_e.signals.values(:);
@@ -68,7 +69,7 @@ opts = optimset('Display','iter','MaxFunEvals',300,'MaxIter',150,'TolX',1e-3,'To
 xT = cl(fminsearch(J, x0, opts));
 pT = xT.*abs(p0);
 ident.eta0 = pT(1); ident.eta1 = pT(2); ident.beta0 = pT(3); ident.Theta_e = pT(4);
-save ident_fit_bench.mat ident
+save(fullfile(fileparts(which('ParID_bench')),'ident_fit_bench.mat'),'ident')
 disp(ident)
 
 %% 5. Validation: whole recording with the fitted parameters, error on each half

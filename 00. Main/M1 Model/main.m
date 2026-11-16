@@ -12,11 +12,11 @@ clear
 
 data_name = 'studentId_0003';   % file name without .mat
 
-main_dir = fileparts(mfilename('fullpath'));
-cd(main_dir)
+main_dir = fileparts(mfilename('fullpath'));      % .../00. Main/M1 Model (no cd any more: files are found through the path)
+addpath(strjoin(fullfile(fileparts(main_dir), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
 ISC_Parameters                % plain variables, grouped below
 
-load(fullfile(main_dir, '..', 'ISCSData', [data_name '.mat']), 'meas');
+load(fullfile(main_dir, '..', '..', 'ISCSData', [data_name '.mat']), 'meas');
 
 %% --- Parameters (same grouping as ISC_Parameters.m)
 constants = struct('R',R, 'Vd',Vd, 'Vc',Vc, 'sigma0',sigma0, 'kappa',kappa, 'lambda',lambda, ...

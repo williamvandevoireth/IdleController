@@ -1,8 +1,9 @@
 %% 0. Load parameters and dynamic_0002 (check data_name = 'dynamic_0002' in main.m)
+addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
 main;
 
 %% 1. Throttle: alpha0, alpha1
-q  = load('../ISCSData/studentId_0002.mat').meas;   % quasistatic measurement, all N samples
+q  = load(fullfile(fileparts(which('main')),'..','..','ISCSData','studentId_0002.mat')).meas;   % quasistatic measurement, all N samples
 ua = q.u_alpha.signals.values(:);      md = q.m_dot_alpha.signals.values(:);
 Ta = q.T_a.signals.values(:);          pa = q.p_a.signals.values(:);
 pm = q.p_m.signals.values(:);          pe = q.p_e.signals.values(:);
@@ -50,5 +51,5 @@ opts = optimoptions('fmincon','Display','iter','FiniteDifferenceStepSize',1e-2);
 xT = fmincon(@(x) costTorque(x, in, ident, data, abs(p0)), x0, [],[],[],[], lb, ub, [], opts);
 pT = xT.*abs(p0);
 ident.eta0 = pT(1); ident.eta1 = pT(2); ident.beta0 = pT(3); ident.Theta_e = pT(4);
-save ident_fit.mat ident                  % keep the result, main.m would overwrite it
+save(fullfile(fileparts(which('ParID')),'ident_fit.mat'),'ident')                 % keep the result, main.m would overwrite it
 disp(ident)

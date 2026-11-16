@@ -2,6 +2,7 @@
 % Same steps as LinNom_bench.m, repeated for each speed and each nominal ignition retardation.
 % Result: LinModels_bench.mat with the struct array M (one entry per operating point).
 % Purpose: check that a controller designed at one point stays stable and well damped over 70-200 rad/s.
+addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
 main;
 ident = load('ident_fit_bench.mat').ident;
 speeds = [70 100 140 200];                      % rad/s   range required by the manual
@@ -41,7 +42,7 @@ for delta_u_nom = retards
     end
 end
 Theta_e = ident.Theta_e;  eta_gen = constants.eta_gen;
-save LinModels_bench.mat M Theta_e eta_gen ident
+save(fullfile(fileparts(which('LinSweep_bench')),'LinModels_bench.mat'), 'M','Theta_e','eta_gen','ident')
 disp('Saved LinModels_bench.mat')
 
 function [w, mb, pm, drift] = ssRun(model, u)

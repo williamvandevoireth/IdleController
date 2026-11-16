@@ -5,6 +5,7 @@
 %   - the identified parameters (ident_fit.mat)
 % and plots omega_e and p_m against the measurement, with the RMSE of each.
 
+addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
 main;                                       % constants, limits, simcfg, ident = initial guesses
 if ~isfile('ident_fit.mat'), error('ident_fit.mat not found: run ParID.m (sections 0-4) first.'); end
 P.initial = ident;                          % manual initial guesses
@@ -15,7 +16,7 @@ mdl = 'Engine_Plant';  load_system(mdl);
 
 fprintf('\n%-14s %-9s %16s %14s\n','data','params','RMSE omega_e','RMSE p_m');
 for f = 1:numel(files)
-    meas = load(fullfile('..','ISCSData',[files{f} '.mat'])).meas;
+    meas = load(fullfile(fileparts(which('main')),'..','..','ISCSData',[files{f} '.mat'])).meas;
     t    = meas.time(:);
     w_meas  = meas.omega_e.signals.values(:);
     pm_meas = meas.p_m.signals.values(:);

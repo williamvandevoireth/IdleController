@@ -4,6 +4,7 @@
 %   - finds u_alpha_nom automatically so that the steady-state speed is omega_target
 %   - checks that the nominal point is an equilibrium of Engine_Plant_Norm
 %   - prints eigenvalues, singular values and condition numbers, saves the matrices
+addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
 main;
 ident = load('ident_fit_bench.mat').ident;      % parameters identified on studentId_0002/0003
 omega_target = 140;                             % rad/s  linearization speed
@@ -54,7 +55,7 @@ try
     fprintf('   %2d   %14.6g %14.6g\n', [(1:numel(dx)); x0(:)'; dx(:)']);
     fprintf('Physical states: d(omega_e)/dt = %.4g rad/s^2, d(p_m)/dt = %.4g Pa/s (both must be about 0)\n', dx(1), dx(2));
 catch err
-    try, feval(model_norm,[],[],[],'term'); catch, end
+    try feval(model_norm,[],[],[],'term'); catch, end
     fprintf('Equilibrium check skipped: %s\n', err.message);
 end
 
@@ -71,8 +72,8 @@ sys = ss(A,B,C,D);
 fprintf('DC gain  omega_e/u_alpha = %.4g,  omega_e/delta_u = %.4g  (normalized; expected signs: + for the throttle, - for the ignition: more retard gives less torque)\n', dcgain(sys));
 fprintf('norm of D = %.3g (must be 0: no feed-through)\n', norm(D));
 figure(5); clf; step(sys, 5); grid on
-save LinModel_bench.mat A B C D x0 omega_e_nom u_alpha_nom delta_u_nom Q_nom p_m_nom tau_IPS tau_seg ident ...
-     theta_a_nom p_a_nom theta_m_nom p_e_nom
+save(fullfile(fileparts(which('LinNom_bench')),'LinModel_bench.mat'), 'A','B','C','D','x0','omega_e_nom','u_alpha_nom','delta_u_nom', ...
+     'Q_nom','p_m_nom','tau_IPS','tau_seg','ident','theta_a_nom','p_a_nom','theta_m_nom','p_e_nom')
 
 %% Local function: steady-state simulation for one throttle opening
 function [w, mb, pm, drift] = ssRun(model, u)
