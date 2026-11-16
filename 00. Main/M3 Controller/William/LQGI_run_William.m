@@ -1,8 +1,9 @@
 %% LQGI_run.m  -  design, simulate and export the idle speed controller
 
-addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
+addpath(strjoin(fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
+addpath(fileparts(mfilename('fullpath')));   % this personal folder (M3 Controller/William), so Controller_William.slx is found
 main                                         % NOTE: main starts with 'clear', so it must stay at the top
-mainDir = fileparts(which('LQGI_run'));      % this folder (M3 Controller)
+mainDir = fileparts(which('LQGI_run_William'));   % this folder (M3 Controller/William)
 
 %% ---------------- Tuning parameters (change only these) ----------------
 r1   = 10;      % penalty on u_alpha      (small = use the throttle a lot)
@@ -14,7 +15,7 @@ Ts   = 1e-3;    % s sampling time (fixed by the competition)
 saveFile = 'controller1.mat';   % use controller2.mat for the second controller
 
 %% ---------------- Part 1: controller design ----------------
-Lm = load(fullfile(mainDir,'LinModel_bench.mat'));
+Lm = load('LinModel_bench.mat');                         % shared linear model, lives in M3 Controller (found through the path)
 As = Lm.A;  Bs = Lm.B;  Cs = Lm.C;  Ds = Lm.D;           % normalized linear plant, 10 states
 [Tb,Ab] = balance(As);  Bb = Tb\Bs;  Cb = Cs*Tb;         % rescale states (cond(As) is about 1e19)
 fprintf('cond(A) %.3g -> %.3g after balancing\n', cond(As), cond(Ab));
