@@ -13,7 +13,7 @@ clear
 data_name = 'studentId_0003';   % file name without .mat
 
 main_dir = fileparts(mfilename('fullpath'));      % .../00. Main/M1 Model (no cd any more: files are found through the path)
-addpath(strjoin(fullfile(fileparts(main_dir), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
+pd = fullfile(fileparts(main_dir), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 ISC_Parameters                % plain variables, grouped below
 
 load(fullfile(main_dir, '..', '..', 'ISCSData', [data_name '.mat']), 'meas');

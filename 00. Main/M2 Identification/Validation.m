@@ -5,7 +5,7 @@
 %   - the identified parameters (ident_fit.mat)
 % and plots omega_e and p_m against the measurement, with the RMSE of each.
 
-addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
+pd = fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 main;                                       % constants, limits, simcfg, ident = initial guesses
 if ~isfile('ident_fit.mat'), error('ident_fit.mat not found: run ParID.m (sections 0-4) first.'); end
 P.initial = ident;                          % manual initial guesses

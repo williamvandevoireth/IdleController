@@ -1,5 +1,5 @@
 %% 0. Load parameters and dynamic_0002 (check data_name = 'dynamic_0002' in main.m)
-addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
+pd = fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 main;
 
 %% 1. Throttle: alpha0, alpha1

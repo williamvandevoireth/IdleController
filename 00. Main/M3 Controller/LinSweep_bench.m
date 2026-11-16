@@ -2,7 +2,7 @@
 % Same steps as LinNom_bench.m, repeated for each speed and each nominal ignition retardation.
 % Result: LinModels_bench.mat with the struct array M (one entry per operating point).
 % Purpose: check that a controller designed at one point stays stable and well damped over 70-200 rad/s.
-addpath(strjoin(fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'}), pathsep));   % milestone folders
+pd = fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 main;
 ident = load('ident_fit_bench.mat').ident;
 speeds = [70 100 140 200];                      % rad/s   range required by the manual
