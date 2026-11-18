@@ -61,7 +61,7 @@ V = struct('data',data, 'init',init, 'ident',S.ident, 'constants',m.constants, '
 f = fieldnames(V);   for i = 1:numel(f), assignin('base', f{i}, V.(f{i})); end
 
 %% model
-mdl = 'Bench_Live';
+mdl = 'Observer_Test_Leon';
 if bdIsLoaded(mdl), set_param(mdl,'SimulationCommand','stop'); close_system(mdl,0); end
 load_system(mdl);
 w0 = min(max(round(c.ISCS_Ty), 70), 200);
@@ -179,7 +179,7 @@ end
 
 function onTick(fig, tmr)
 if ~isvalid(fig)                                   % window gone (closed in another way): stop the simulation and remove this timer
-    try, set_param('Bench_Live', 'SimulationCommand', 'stop'); catch, end
+    try, set_param('Observer_Test_Leon', 'SimulationCommand', 'stop'); catch, end
     stop(tmr);   delete(tmr);   return
 end
 ud = fig.UserData;   mdl = ud.model;
