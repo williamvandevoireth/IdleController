@@ -191,25 +191,37 @@ if ud.rnd.Value && ts >= ud.next
     d = ud.rand_on;   if ~on, d = ud.rand_off; end
     ud = fig.UserData;   ud.next = ts + d(1) + (d(2) - d(1))*rand;   fig.UserData = ud;
 end
+
 % read the signals of the running model
 try
-    rp = get_param([mdl '/Plant'],   'RuntimeObject');   
-    rl = get_param([mdl '/limits'],  'RuntimeObject');
-    rr = get_param([mdl '/ref_w'],   'RuntimeObject');   
-    ro = get_param([mdl '/load_on'], 'RuntimeObject');
+    rp  = get_param([mdl '/Plant'],   'RuntimeObject');
+    rl  = get_param([mdl '/limits'],  'RuntimeObject');
+    rr  = get_param([mdl '/ref_w'],   'RuntimeObject');
+    ro  = get_param([mdl '/load_on'], 'RuntimeObject');
     rob = get_param([mdl '/Observer'], 'RuntimeObject');
-    w = double(rp.OutputPort(1).Data);   u = double(rl.OutputPort(1).Data);   r = double(rr.OutputPort(1).Data);   on = double(ro.OutputPort(1).Data);
-    w_obs = double(rob.OutputPort(1).Data);
-    e_obs = w - w_obs;
 
-    val = [w, w_obs, r, r-w, e_obs, ...
-        u(1), u(2), ...
-        double(rp.OutputPort(2).Data)/1000, ...
-        double(rp.OutputPort(3).Data), ...
-        double(rp.OutputPort(4).Data), ...
-        1000*double(rp.OutputPort(5).Data), ...
-        1000*double(rp.OutputPort(6).Data), ...
-        on*ud.Pon];
+    % Signale der Anlage auslesen
+    w  = double(rp.OutputPort(1).Data);
+    u  = double(rl.OutputPort(1).Data);
+    r  = double(rr.OutputPort(1).Data);
+    on = double(ro.OutputPort(1).Data);
+
+    % Observer-Ausgang auslesen
+    w_obs_all = double(rob.OutputPort(1).Data);
+
+    % Dimension und Inhalt einmalig im Command Window anzeigen
+    persistent observerInfoShown
+    if isempty(observerInfoShown)
+        disp('--- Observer-Ausgang ---')
+        disp(['Dimension: ', mat2str(size(w_obs_all))])
+        disp(w_obs_all)
+        observerInfoShown = true;
+    end
+
+    % Diagnose vorerst beenden:
+    % Die Observer-Ausgabe ist noch nicht als Drehzahl zugeordnet.
+    return
+
 catch ME
     disp(getReport(ME, 'extended'));
     return
@@ -241,8 +253,8 @@ end
 if w < 50, flag = '   *** STALL: speed below 50 rad/s ***'; else, flag = ''; end
 fig.UserData = ud;
 ud.info.Text = sprintf( ...
-    't = %.1f s | reference %.0f | speed %.1f rad/s | observer %.1f rad/s | RMSE %.4f rad/s | load %s', ...
-    ts, r, w, w_obs, RMSE_obs, ternary(on ~= 0, 'ON', 'off'));
+    't = %.1f s | reference %.0f | speed %.1f rad/s | observer %.1f rad/s | RMSE %.4f rad/s | load %s%s', ...
+    ts, r, w, w_obs, RMSE_obs, ternary(on ~= 0, 'ON', 'off'), flag);
 end
 
 function closePanel(fig)
