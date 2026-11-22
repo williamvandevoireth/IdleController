@@ -8,10 +8,12 @@ function fig = live_test(ctrlFile, opt)
 %   Preserves the original live controls and plots and additionally plots
 %   e_obs = omega_e_obs - omega_e_meas.
 %
-%   The Outport named omega_e_obs carries the 11-element observer state
-%   vector x_hat (source: Gain1), NOT a scalar speed. The estimated speed is
-%       omega_e_obs = ISCS_Ty * Obs_Cy * x_hat.
-%   The Outport named omega_e_meas carries the measured speed (source: Plant).
+%   The Outport omega_e_obs carries the 11-element shifted/scaled state vector
+%   after Sum1 (+ ones) and Gain1 (* ISCS_Ty), NOT a scalar speed.
+%   For the speed estimate, this function reads the raw deviation-state vector
+%   directly from the Observer block and calculates
+%       omega_e_obs = ISCS_Ty * (1 + Obs_Cy * x_hat_deviation).
+%   The Outport omega_e_meas carries the measured speed (source: Plant).
 
 arguments
     ctrlFile
@@ -454,7 +456,7 @@ end
 
 observerOK = false;
 
-x_hat = [];
+x_hat_deviation = [];
 omega_e_obs = NaN;
 omega_e_meas = NaN;
 e_obs = NaN;
@@ -465,15 +467,23 @@ try
     % Gain1 -> omega_e_obs Outport
     % Plant -> omega_e_meas Outport
 
-    x_hat = readOutportSourceValue(mdl,'omega_e_obs');
+    %% Read observer deviation states and measured physical speed
+
+    % Read the signal feeding Sum1 input 1. The known model wiring is:
+    % Observer output -> Sum1 input 1, Constant1 -> Sum1 input 2.
+    % This reads the raw Observer output BEFORE the +ones offset and Gain1.
+    % We trace the Sum1 input connection because direct access to the
+    % StateSpace RuntimeObject by block path is not supported reliably here.
+    x_hat_deviation = readInputSourceValue(mdl,'Sum1',1);
+    x_hat_deviation = x_hat_deviation(:);
+
+    % Actual measured engine speed in rad/s.
     omega_e_meas = readOutportSourceValue(mdl,'omega_e_meas');
 
-    x_hat = x_hat(:);
-
     % Check observer state vector dimension.
-    if numel(x_hat) ~= size(ud.Obs_Cy,2)
+    if numel(x_hat_deviation) ~= size(ud.Obs_Cy,2)
         error('Observer has %d states, Obs_Cy expects %d.', ...
-            numel(x_hat),size(ud.Obs_Cy,2));
+            numel(x_hat_deviation),size(ud.Obs_Cy,2));
     end
 
     % Check measurement.
@@ -481,13 +491,11 @@ try
         error('omega_e_meas is not scalar.');
     end
 
-    % Convert estimated state vector into estimated engine speed.
-    omega_normalized = ud.Obs_Cy * x_hat;
-    omega_e_obs = ud.ISCS_Ty * omega_normalized;
-
-    % Observer estimation error.
+    % Obs_Cy maps raw observer deviation states to normalized speed
+    % deviation. The +1 restores the nominal operating point.
+    omega_normalized_deviation = ud.Obs_Cy * x_hat_deviation;
+    omega_e_obs = ud.ISCS_Ty * (1 + omega_normalized_deviation);
     e_obs = omega_e_obs - omega_e_meas;
-
     observerOK = true;
 
     % Print recovery message if observer reading previously failed.
@@ -504,17 +512,37 @@ try
         fprintf('[OBSERVER DEBUG] t = %.3f s\n',ts);
         fprintf('============================================\n');
 
-        fprintf('x_hat (%d states):\n',numel(x_hat));
-        disp(x_hat);
+        fprintf('Raw observer deviation states (%d):\n',numel(x_hat_deviation));
+        disp(x_hat_deviation);
+        %% DEBUG: Contribution of each observer state
 
-        fprintf('Obs_Cy * x_hat = %.10f\n',omega_normalized);
+        contributions = ud.Obs_Cy(:).*x_hat_deviation(:);
+
+        Tobs = table( ...
+            (1:numel(x_hat_deviation))', ...
+            ud.Obs_Cy(:), ...
+            x_hat_deviation(:), ...
+            contributions, ...
+            'VariableNames', ...
+            {'State','Obs_Cy','x_hat_deviation','Contribution'});
+
+        disp('Contribution of individual observer states:');
+        disp(Tobs);
+
+        fprintf('Sum of contributions: %.10f\n', ...
+            sum(contributions));
+
+        fprintf('Obs_Cy * x_hat_deviation = %.10f\n', ...
+            omega_normalized_deviation);
         fprintf('ISCS_Ty        = %.10f\n',ud.ISCS_Ty);
 
         fprintf('omega_e_obs    = %.8f rad/s\n',omega_e_obs);
         fprintf('omega_e_meas   = %.8f rad/s\n',omega_e_meas);
 
         fprintf('Observer error = %.8f rad/s\n',e_obs);
-
+        fprintf('Load: %s | P_load: %.0f W\n', ...
+            ternary(on ~= 0,'ON','OFF'),on*ud.Pon);
+        
         fprintf('Plant w        = %.8f rad/s\n',w);
         fprintf('Plant difference = %.8f rad/s\n', ...
             w-omega_e_meas);
@@ -743,5 +771,55 @@ while true
         error('Could not locate project root containing M1 Model and M4 Competition.');
     end
     projectRoot = parentFolder;
+end
+end
+function y = readInputSourceValue(mdl,blockName,inputIndex)
+% Read the live signal feeding one input port of a block.
+% This follows the input line to its source block/port and then reads the
+% source RuntimeObject through its block handle. This is the same access
+% route that successfully read Observer -> Sum1 input 1 during diagnosis.
+
+targetBlock = [mdl '/' blockName];
+if getSimulinkBlockHandle(targetBlock) == -1
+    error('Block "%s" was not found.',targetBlock);
+end
+
+ph = get_param(targetBlock,'PortHandles');
+if inputIndex < 1 || inputIndex > numel(ph.Inport)
+    error('Block "%s" has no input port %d.',targetBlock,inputIndex);
+end
+
+lineHandle = get_param(ph.Inport(inputIndex),'Line');
+if isempty(lineHandle) || lineHandle == -1
+    error('Input port %d of block "%s" is not connected.', ...
+        inputIndex,targetBlock);
+end
+
+srcPort = get_param(lineHandle,'SrcPortHandle');
+srcBlock = get_param(lineHandle,'SrcBlockHandle');
+if isempty(srcBlock) || srcBlock == -1 || isempty(srcPort) || srcPort == -1
+    error('Could not identify the source connected to %s input %d.', ...
+        targetBlock,inputIndex);
+end
+
+ports = get_param(srcBlock,'PortHandles');
+portIndex = find(ports.Outport == srcPort,1,'first');
+if isempty(portIndex)
+    error('Could not identify the source output port for %s input %d.', ...
+        targetBlock,inputIndex);
+end
+
+% Use the source block handle (not its path string). This access pattern
+% was confirmed to work for the Observer StateSpace block in this model.
+rt = get_param(srcBlock,'RuntimeObject');
+if isempty(rt)
+    error('RuntimeObject of source block "%s" is empty.', ...
+        getfullname(srcBlock));
+end
+
+y = double(rt.OutputPort(portIndex).Data);
+if isempty(y) || any(~isfinite(y(:)))
+    error('Signal from "%s" to %s input %d is empty or non-finite.', ...
+        getfullname(srcBlock),targetBlock,inputIndex);
 end
 end
