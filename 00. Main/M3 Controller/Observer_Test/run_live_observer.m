@@ -1,76 +1,96 @@
-%% run_live.m  -  interactive test: edit the settings, press Run, a window opens with live graphs, sliders and buttons
-% Uses functions/live_test.m and models/Bench_Live.slx. Nothing is written to disk. Close the window or press "Stop and close" to end.
-%
-% In the window:  - slider "Reference speed"        the speed the controller should hold (70-200 rad/s); the controller sets the throttle itself
-%                 - button "Load"                   electrical load on / off (the 1.2 kW water boiler)
-%                 - tick box "Random load"          load switches on and off at random times
-%                 - tick boxes "Show in graphs"     speed, reference, speed error, throttle, ignition, manifold pressure, engine torque,
-%                                                   load torque, air mass flows, load power
-%% Select the personal live_test.m in M3 Controller/Leon
 
-%% Select the Observer_Test live simulation
+%% run_live_observer.m - Start the Observer live simulation
 
-projectRoot = 'C:\Users\leont\Documents\ETH\Engine Systems\ISCS\IdleController\00. Main';
+%% Project paths - portable across team members
 
-observerRoot = fullfile(projectRoot,'Observer_Test');
+% Folder containing this script
+scriptFolder = fileparts(mfilename('fullpath'));
 
-functionsFolder = fullfile(observerRoot,'functions');
-modelsFolder = fullfile(observerRoot,'models');
+% Automatically detect Observer_Test folder
+if isfolder(fullfile(scriptFolder, 'functions')) && ...
+        isfolder(fullfile(scriptFolder, 'models'))
 
-% Temporarily use the project root as current folder.
-oldFolder = pwd;
-folderCleanup = onCleanup(@() cd(oldFolder));
-cd(projectRoot);
+    % Script is directly inside Observer_Test
+    observerRoot = scriptFolder;
 
-% Add the new Observer_Test folders.
-addpath(functionsFolder,'-begin');
-addpath(modelsFolder,'-begin');
+elseif isfolder(fullfile(scriptFolder, 'Observer_Test', 'functions')) && ...
+        isfolder(fullfile(scriptFolder, 'Observer_Test', 'models'))
 
-% Clear MATLAB's cached function and refresh the file system cache.
-clear live_test
-clear LGQI_run_Observer
-rehash
+    % Script is directly inside M3 Controller
+    observerRoot = fullfile(scriptFolder, 'Observer_Test');
 
-% Verify the selected file before starting.
-expectedFile = fullfile(functionsFolder,'live_test.m');
-selectedFile = which('live_test');
-
-fprintf('Selected live_test: %s\n',selectedFile);
-
-if ~strcmpi(selectedFile,expectedFile)
-    error('Wrong live_test.m selected! Expected: %s',expectedFile);
+else
+    error('Could not locate Observer_Test with its functions and models folders.');
 end
 
-% Temporarily use the project root as current folder.
-% This prevents a live_test.m in the current folder from taking priority.
+functionsFolder = fullfile(observerRoot, 'functions');
+modelsFolder    = fullfile(observerRoot, 'models');
+
+% Automatically find project root (00. Main)
+projectRoot = scriptFolder;
+
+while true
+
+    if isfolder(fullfile(projectRoot, 'M1 Model')) && ...
+            isfolder(fullfile(projectRoot, 'M4 Competition'))
+        break
+    end
+
+    parentFolder = fileparts(projectRoot);
+
+    if isempty(parentFolder) || strcmp(parentFolder, projectRoot)
+        error('Could not find project root containing M1 Model and M4 Competition.');
+    end
+
+    projectRoot = parentFolder;
+
+end
+
+% Temporarily use project root as current folder
 oldFolder = pwd;
 folderCleanup = onCleanup(@() cd(oldFolder));
 cd(projectRoot);
 
-% Put the personal functions folder first.
-addpath(m3Functions, '-begin');
+% Add Observer_Test folders at the beginning of the MATLAB path
+addpath(functionsFolder, '-begin');
+addpath(modelsFolder, '-begin');
 
-% Clear MATLAB's cached function and refresh the file system cache.
+% Clear cached functions
 clear live_test
-rehash
+clear LGQI_run_Observer
+rehash;
 
-% Verify the selected file before starting.
-expectedFile = fullfile(m3Functions, 'live_test.m');
+% Verify selected live_test.m
+expectedFile = fullfile(functionsFolder, 'live_test.m');
 selectedFile = which('live_test');
 
-fprintf('Selected live_test: %s\n', selectedFile);
+fprintf('\nProject root:\n%s\n', projectRoot);
+fprintf('\nObserver root:\n%s\n', observerRoot);
+fprintf('\nSelected live_test:\n%s\n', selectedFile);
 
-if ~strcmpi(selectedFile, expectedFile)
+if isempty(selectedFile) || ~strcmpi(selectedFile, expectedFile)
     error('Wrong live_test.m selected! Expected: %s', expectedFile);
 end
 
-%% ---------------- settings ----------------
-ctrlFile = fullfile(observerRoot,'controller1_Leon.mat');
-P_on     = 1200;                         % W      load power when the load is on
-rand_on  = [4 12];                       % s      random load: how long it stays on  (min max)
-rand_off = [4 12];                       % s      random load: how long it stays off (min max)
-du_min   = -30;                          % degCA  lower limit of the ignition retardation (assumption, the manual gives none)
-window   = 40;                           % s      width of the sliding time window of the graphs
+%% Simulation settings
 
-%% ---------------- run ----------------
-live_test(ctrlFile, P_on=P_on, rand_on=rand_on, rand_off=rand_off, du_min=du_min, window=window);
+ctrlFile = fullfile(observerRoot,'controller1_Observer.mat');
+
+if ~isfile(ctrlFile)
+    error('Controller file not found: %s',ctrlFile);
+end
+
+P_on     = 1200;
+rand_on  = [4 12];
+rand_off = [4 12];
+du_min   = -30;
+window   = 40;
+
+%% Start live simulation
+
+live_test(ctrlFile, ...
+    P_on=P_on, ...
+    rand_on=rand_on, ...
+    rand_off=rand_off, ...
+    du_min=du_min, ...
+    window=window);
