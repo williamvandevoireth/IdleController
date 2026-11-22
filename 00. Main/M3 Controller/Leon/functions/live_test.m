@@ -289,6 +289,22 @@ ud = fig.UserData;
 ud.timer = tm;
 fig.UserData = ud;
 
+%% Configure continuous real-time simulation
+
+% Run indefinitely until the user presses Stop and close.
+set_param(mdl,'StopTime','inf');
+
+% Synchronize simulation time with real wall-clock time.
+set_param(mdl,'EnablePacing','on');
+set_param(mdl,'PacingRate','1');
+
+% Display the active configuration.
+fprintf('\nLIVE SIMULATION SETTINGS\n');
+fprintf('StopTime:     %s\n',get_param(mdl,'StopTime'));
+fprintf('EnablePacing: %s\n',get_param(mdl,'EnablePacing'));
+fprintf('PacingRate:   %s\n',get_param(mdl,'PacingRate'));
+
+% Start live simulation and plotting timer.
 set_param(mdl,'SimulationCommand','start');
 start(tm);
 if nargout == 0
@@ -351,7 +367,7 @@ function onRandom(fig)
 ud = fig.UserData;
 if ud.rnd.Value
     ud.load.Enable = 'off';
-    ts = str2double(get_param(ud.model,'SimulationTime'));
+    ts = get_param(ud.model, 'SimulationTime');
     ud.next = ts + 2 + 4*rand;
     fig.UserData = ud;
 else
@@ -374,7 +390,7 @@ if ~bdIsLoaded(mdl) || ...
     return
 end
 
-ts = str2double(get_param(mdl,'SimulationTime'));
+ts = get_param(ud.model, 'SimulationTime');
 
 % ---------------------------------------------------------
 % Random load switching
