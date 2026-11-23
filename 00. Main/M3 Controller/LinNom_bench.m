@@ -1,5 +1,5 @@
 %% LinNom_bench.m  -  LinNom.m with the parameters identified on the bench + diagnostics
-% Differences from LinNom.m:
+% Differences from LinNom.m (archived):
 %   - loads ident_fit_bench.mat (LinNom.m used the initial guesses of ISC_Parameters.m)
 %   - finds u_alpha_nom automatically so that the steady-state speed is omega_target
 %   - checks that the nominal point is an equilibrium of Engine_Plant_Norm

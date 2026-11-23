@@ -85,6 +85,33 @@ Conventions: in every milestone folder the **scripts you run** (`main`, `ParID`,
 
 ## 3. Quick start
 
+### How to test your controller (start here)
+
+Everything is run from MATLAB with the repository folder `00. Main` as the current folder. Replace `<Name>` by your name.
+
+| Step | What you do | Command / file | Time | What a good result looks like |
+|:----:|-------------|----------------|------|-------------------------------|
+| 0 | Build the workspace (once per MATLAB session; it starts with `clear`) | `main` | seconds | no error |
+| 1 | Create your folder (once) | copy `M3 Controller/_Template/` to `M3 Controller/<Name>/`, rename the script to `LQGI_run_<Name>.m` | | |
+| 2 | **Design**: change the tuning parameters at the top of your script, then run it | `M3 Controller/<Name>/LQGI_run_<Name>.m` | seconds (minutes if it linearizes itself) | table shows `stable = 1` in all 8 cases and `worst min|1+L| ≥ 0.5`; it saves `controller1_<Name>.mat` and `controller1_<Name>_observer.mat` |
+| 3 | **Quick cost test** | `test_controller('controller1_<Name>.mat')` | 3 s | no stall (minimum speed above 50 rad/s); a lower cost *J* is better (reference point: *J* = 680 for `controller1_William`, seed 1) |
+| 4 | **Compare** with the others on the same scenario | `test_controller({'controller1_William.mat','controller1_<Name>.mat'})` | 3 s per file | one line per controller; same seed means comparable *J* |
+| 5 | **Stress test** | `robust_test('controller1_<Name>.mat')` (`quick=true` for 3 profiles) | 2-4 min | **0 stalls** in the table (stall = speed below 50 rad/s) and a low mean *J* |
+| 6 | **Look at it live** | set `ctrlFile` in `M3 Controller/_Testing/run_live.m`, press Run | as long as you like | speed follows the reference slider; after a load step the speed recovers without stalling; throttle trace is not too noisy |
+| 7 | **Frequency analysis** (required by the TA) | no script yet, see [Open items](#8-open-items) | | |
+| 8 | **Submit** | copy the two chosen files to `controller1.mat` and `controller2.mat` | | test them in the bench session (Mon 2026-11-30, 14:00, up to 5 controllers) |
+
+Notes:
+- All test scripts are in `M3 Controller/_Testing/`; the scripts add every folder they need to the path themselves, so you only need `main` and the commands above. A bare file name (`'controller1_<Name>.mat'`) is found in any personal folder of `M3 Controller`.
+- Other options of `test_controller`: `seed=2` (other random profile), `scenario="step", w_ref=140` (constant reference with five load steps), `noise=false`, `w_low=100`. Use the **same scenario and seed** whenever you compare numbers.
+- `run_test.m` does the same as step 3-4 with the settings at the top of the file (press Run instead of typing).
+- The observer graph in step 6 only appears if `controller1_<Name>_observer.mat` is next to the controller file. The template saves it; if your own design script does not, copy the three lines at the end of `LQGI_run_Template.m`.
+- Cost *J*, stall and the bench conventions are explained in section 7 (*Closed loop on the nonlinear plant*).
+- A controller qualifies for submission if it never stalls in step 5; among those, the lowest mean *J* (proposal of the team, 2026-11-23).
+- Rules for the shared repository: edit only your own folder, one person per `.slx` file, commit and push your design script and `.mat` files, and pull before you run anything (files get moved).
+
+### Setup and run order of all scripts
+
 1. Make the repository the current folder in MATLAB. The main scripts add the four milestone folders to the path themselves:
    `ParID*.m`, `Validation.m`, `LinNom_bench.m`, `LinSweep_bench.m`, `LQGI_run_<Name>.m`, `run_test.m`, `run_live.m`, `main.m` (and the functions `test_controller`, `live_test`).
    `M3 Controller/Leon/LQR_Controller_Leon.m` has no path line, so run `main` first.
@@ -105,12 +132,7 @@ Conventions: in every milestone folder the **scripts you run** (`main`, `ParID`,
 a **reference-speed slider** (the controller sets throttle and ignition by itself), a **Load button** (1.2 kW on/off) and **Random load**, plus tick boxes for what the graphs show
 (speed, reference, speed error, throttle, ignition, manifold pressure, engine torque, load torque, air mass flows, load power). It also uses the recorded measurement noise. Close the window to stop.
 
-**Your own controller** (every team member):
-1. Copy `M3 Controller/_Template/` to `M3 Controller/<YourName>/` (or use your existing folder) and rename the script to `LQGI_run_<YourName>.m`.
-2. Change the tuning parameters at the top, or replace the design section with your own method. The result must be the six competition matrices (`ISCS_Ad/Bd/Cd/Dd`, `ISCS_Tu`, `ISCS_Ty`).
-3. Run the script: it saves `controller1_<YourName>.mat` in your folder and calls `test_controller` on it.
-4. Compare variants on the same scenario: `test_controller({fileA, fileB, fileC})` prints one line per file (*J*, tracking, throttle activity, minimum speed, RMS error, stall).
-   Other tests: `test_controller(file, scenario="step", w_ref=140)`, `seed=2`, `noise=false`, `w_low=100`. Same scenario and seed = comparable *J*.
+**Your own controller:** see [How to test your controller](#how-to-test-your-controller-start-here) above.
 
 `test_controller` writes no files and does not clear your workspace. Convention it assumes (inferred from manual Fig. 2.15): controller input = `(ω_ref − ω_e)/ISCS_Ty`, plant input = `ISCS_Tu·(1 + controller output)`.
 
