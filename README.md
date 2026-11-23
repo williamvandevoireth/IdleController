@@ -9,11 +9,11 @@
 | **Tools** | MATLAB / Simulink R2026b (Control System Toolbox for `lqr`, `c2d`, `margin`) |
 | **Team** | 3 to 5 people; the exercise gives up to 0.25 grade points, the grade itself is a 30 min oral exam that also covers the exercise |
 | **Manual** | `2026_ExerciseInstructionsManual.pdf` (not in this repo). Page numbers below are the printed ones |
-| **State** | **2026-11-16** — see [Status](#1-status) |
+| **State** | **2026-11-23** — see [Status](#1-status) |
 
 > [!IMPORTANT]
-> M1 and M2 are done (model error still large). M3: linearization done; two LQGI controllers are designed and pass closed-loop tests on the nonlinear plant
-> for references of **90-200 rad/s** with load steps and recorded noise (`M3 Controller/William/`). **A load step at references below about 85 rad/s still stalls the model**;
+> M1 and M2 are done (model error still large). M3: linearization done; two LQGI controllers by William (`M3 Controller/William/`) pass closed-loop tests on the nonlinear plant
+> for references of **90-200 rad/s** with load steps and recorded noise. Since 2026-11-16 two more team members contributed: Jeremie added a third LQGI controller (`Jeremie/`, designed at 90 rad/s, ignition-heavy, with its own robustness test `robust_test.m`), and Leon is building a live test of the observer estimation error (`Observer_Test/`). **A load step at references below about 85 rad/s still stalls the model**;
 > at 70 rad/s no feedback controller can prevent it (see [Results](#7-results-so-far)). Nothing has been tested on the real engine yet.
 
 ## Contents
@@ -35,7 +35,10 @@
 **Test bench** (ML E44, dSpace ECU): model-validation session week of Nov 2 (done, our recordings are `studentId_*`), controller sessions weeks of Nov 30 and Dec 7. Two controllers per team, the lowest cost *J* wins (pizza voucher).
 
 **Milestone 3 in detail:** linearization at 140 rad/s and a sweep over 70-200 rad/s are done. `M3 Controller/William/` holds the LQGI design script, a closed-loop bench and two controller files.
-A second design script `00. Main/LQR_Controller_Leon.m` is in progress (its commit message mentions `Observer_test_Leon.slx`, which is not in the repo).
+Other team members' work (since 2026-11-16):
+- **Jeremie** (`M3 Controller/Jeremie/`): `LQGI_run_Jeremie.m` designs at 90 rad/s with `Δu_ζ,nom = −30 °CA` (ignition does the fast work, throttle stays calm, which targets the 85-90 % of *J* caused by throttle activity), `qobs = 2e-3`, `r₁ = 0.045`, `qw = 52`; it linearizes itself (cached in `LinModels_Jeremie.mat`, 2-4 min) and saves `controller1_Jeremie.mat`. `robust_test.m` is a stricter bench than `test_controller`: 10 random profiles, noise ×1.5 with a different offset per profile, throttle actuator lag, noise ×2, 9 parameter variants, overshoot and steady-state error. Uses a private copy of the bench (`Bench_ISCS_Jeremie.slx`).
+- **Leon** (`M3 Controller/Leon/` and `M3 Controller/Observer_Test/`): `LQR_Controller_Leon.m` (LQR/observer design, moved here from `00. Main/`) and an **observer test**: `Observer_Test_Live.slx` + `live_test.m` + `run_live_observer.m` run the live window and plot the observer error `e_obs = ω_e,obs − ω_e,meas`. The commit log (2026-11-22) says it runs now, but an earlier version had the observer values off by a factor 1000; check the units of `e_obs` before relying on it. `Observer_Test/` is the cleaned copy (own `functions/`, `models/`); `Leon/Observer_Test_Leon.slx` and `Leon/functions/` are the older copies.
+- No results of Jeremie's or Leon's controllers are in the README yet; compare them with `test_controller({...})` or `robust_test({...})`.
 
 ---
 
@@ -57,8 +60,13 @@ IdleController/
 │   │   │                      Bench_run_William.m · Bench_William.slx   first personal bench, superseded by M4 (can be deleted)
 │   │   │                      controller1_William.mat · controller2_William.mat    competition-format files
 │   │   │                      Controller_William.slx   early LQG/extension block model (holds the first design, not updated)
-│   │   ├── Leon/ · Jeremie/   personal folders with the starter script LQGI_run_<Name>.m (copy of the template)
-│   │   └── _Template/         LQGI_run_Template.m: copy this folder, rename it to your name, rename the script
+│   │   ├── Jeremie/           LQGI_run_Jeremie.m (design at 90 rad/s, −30 °CA) · robust_test.m (robust closed-loop evaluation)
+│   │   │                      controller1_Jeremie.mat · LinModels_Jeremie.mat (cache) · Bench_ISCS_Jeremie.slx (private bench copy)
+│   │   ├── Leon/              LQR_Controller_Leon.m · Observer_Test_Leon.slx · functions/ (older copies of the observer test)
+│   │   ├── Observer_Test/     LQGI_run_Observer.m · run_live_observer.m   EDIT AND RUN: live observer test (shows the observer error)
+│   │   │   ├── functions/     live_test.m · test_controller.m
+│   │   │   └── models/        Observer_Test_Live.slx
+│   │   └── _Template/         LQGI_run_Template.m · controller1__Template.mat: copy this folder, rename it to your name, rename the script
 │   ├── M4 Competition/        shared test tooling for everybody's controller
 │   │   │                      run_live.m   EDIT AND RUN: live window with graphs, reference slider, load button (+ random load), tick boxes
 │   │   │                      run_test.m   EDIT AND RUN: set the controller file(s), reference profile and load at the top, press Run
@@ -67,7 +75,6 @@ IdleController/
 │   │   │                      live_test.m         the live window behind run_live.m
 │   │   └── models/            Bench_ISCS.slx (bench of test_controller: controller + limits + Engine_Plant_CL) · Engine_Plant_CL.slx (Engine_Plant + omega_e outport)
 │   │                          Bench_Live.slx · Engine_Plant_Live.slx (live window: plant with load inputs and extra outputs)
-│   └── LQR_Controller_Leon.m  team member's LQR/observer design script (in progress)
 └── 01. Throttle Area … 07. Load Torque/    first per-block models, kept for reference
       ThrottleArea · ThrottleAMF · IntakeManifold · AMF_model · Engine_Torque (+ ParID, Modelerror) · EngineInertia · LoadTorque
 ```
@@ -80,7 +87,7 @@ Conventions: in every milestone folder the **scripts you run** (`main`, `ParID`,
 
 1. Make the repository the current folder in MATLAB. The main scripts add the four milestone folders to the path themselves:
    `ParID*.m`, `Validation.m`, `LinNom_bench.m`, `LinSweep_bench.m`, `LQGI_run_<Name>.m`, `run_test.m`, `run_live.m`, `main.m` (and the functions `test_controller`, `live_test`).
-   `LinNom.m`, `LQR_Controller_Leon.m` and `Linearization_ISC.m` have no path line, so run `main` first.
+   `LinNom.m`, `M3 Controller/Leon/LQR_Controller_Leon.m` and `Linearization_ISC.m` have no path line, so run `main` first.
 2. `main` builds the workspace and **starts with `clear`**. It creates the structs `constants`, `ident` (initial guesses), `init`, `limits`, `simcfg`, `data`.
    `data_name` in `main.m` selects the recording (default `studentId_0003`). `data.meas.T_a.signals.values` etc. are read by the From-Workspace blocks of the plant.
 3. Run order:
@@ -372,7 +379,9 @@ Done: `V_m = 0.00923 m³`, `λ_lω = 1.0379`, eigenvalues of A −2.474 and −4
 ## 8. Open items
 
 - [x] Shared closed-loop bench with load, recorded noise and cost *J*: `M4 Competition/functions/test_controller.m` + `models/Bench_ISCS.slx` (any controller file, several files in one table).
-- [ ] Each team member designs a controller in their own folder and compares it with `test_controller({...})`; a fourth member folder is still to be created from `_Template/`.
+- [ ] Each team member designs a controller in their own folder and compares it with `test_controller({...})`. Done so far: William (2 controllers), Jeremie (1); Leon is working on the observer test; a fourth member folder is still to be created from `_Template/`.
+- [ ] Run `robust_test({'controller1_William.mat','controller2_William.mat','controller1_Jeremie.mat'})` and put the comparison into section 7.
+- [ ] Leon's observer test: confirm that the factor-1000 error in the observer values is fixed, then clean up the duplicate copies (`Leon/functions/`, `Leon/Observer_Test_Leon.slx` vs. `Observer_Test/`).
 - [x] Controller that works for references of 90-200 rad/s with load steps (`controller1_William.mat`, `controller2_William.mat`).
 - [ ] Load steps at references below about 85 rad/s still stall the model. Ask the supervisors whether the competition switches the load on at 70 rad/s, and whether the real engine behaves like the model there (not covered by any recording).
 - [ ] Ask the supervisors for the real lower limit of the ignition retardation (−30 °CA is assumed) and how the test bench applies `ISCS_Tu` / `ISCS_Ty` (assumed: normalized deviations from the nominal point).
