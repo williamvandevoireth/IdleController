@@ -12,7 +12,7 @@
 % speed falls. With 1.2 kW on, the plant is open-loop unstable at 70 rad/s. Design on a low-speed model with the load on,
 % and check all operating points, otherwise the controller stalls at low reference speeds.
 
-pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
+pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 main                                                     % workspace of the project (main starts with 'clear')
 myDir = fileparts(mfilename('fullpath'));
 observerRoot = fileparts(myDir);

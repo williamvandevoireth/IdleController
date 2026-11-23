@@ -56,20 +56,20 @@ addpath(functionsFolder, '-begin');
 addpath(modelsFolder, '-begin');
 
 % Clear cached functions
-clear live_test
+clear live_test_observer
 clear LGQI_run_Observer
 rehash;
 
-% Verify selected live_test.m
-expectedFile = fullfile(functionsFolder, 'live_test.m');
-selectedFile = which('live_test');
+% Verify selected live_test_observer.m
+expectedFile = fullfile(functionsFolder, 'live_test_observer.m');
+selectedFile = which('live_test_observer');
 
 fprintf('\nProject root:\n%s\n', projectRoot);
 fprintf('\nObserver root:\n%s\n', observerRoot);
-fprintf('\nSelected live_test:\n%s\n', selectedFile);
+fprintf('\nSelected live_test_observer:\n%s\n', selectedFile);
 
 if isempty(selectedFile) || ~strcmpi(selectedFile, expectedFile)
-    error('Wrong live_test.m selected! Expected: %s', expectedFile);
+    error('Wrong live_test_observer.m selected! Expected: %s', expectedFile);
 end
 
 %% Simulation settings
@@ -88,7 +88,7 @@ window   = 40;
 
 %% Start live simulation
 
-live_test(ctrlFile, ...
+live_test_observer(ctrlFile, ...
     P_on=P_on, ...
     rand_on=rand_on, ...
     rand_off=rand_off, ...

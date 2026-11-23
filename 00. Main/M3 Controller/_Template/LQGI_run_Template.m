@@ -12,7 +12,7 @@
 % speed falls. With 1.2 kW on, the plant is open-loop unstable at 70 rad/s. Design on a low-speed model with the load on,
 % and check all operating points, otherwise the controller stalls at low reference speeds.
 
-pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
+pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 main                                                     % workspace of the project (main starts with 'clear')
 myDir = fileparts(mfilename('fullpath'));   [~, myName] = fileparts(myDir);   % your folder and its name
 
@@ -83,5 +83,8 @@ fprintf('all cases stable: %d, worst min|1+L| = %.3f (need >= 0.5)\n', allStable
 
 %% ---------------- competition file and closed-loop test ----------------
 save(fullfile(myDir, saveFile), 'ISCS_Ad', 'ISCS_Bd', 'ISCS_Cd', 'ISCS_Dd', 'ISCS_Tu', 'ISCS_Ty');
+% copy of the observer (x_hat' = Aobs x_hat + Bobs [u; y]) for the observer-error graph of run_live (_Testing/live_test.m); not part of the competition file
+Aobs = A - Lg*C;   Bobs = [B, Lg];   Cobs = eye(size(A,1));   Dobs = zeros(size(A,1), size(Bobs,2));   Obs_Cy = C;
+save(fullfile(myDir, [erase(saveFile, '.mat') '_observer.mat']), 'Aobs', 'Bobs', 'Cobs', 'Dobs', 'Obs_Cy');
 fprintf('saved %s\n', fullfile(myName, saveFile));
 test_controller(fullfile(myDir, saveFile));              % shared bench in M4 Competition

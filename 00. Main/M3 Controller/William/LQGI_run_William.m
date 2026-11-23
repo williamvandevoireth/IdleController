@@ -4,7 +4,7 @@
 % + P_l/(omega_e^2*eta_gen*Theta_e) to the speed equation and makes the plant slower or even unstable at low speed
 % (pole at +0.55 1/s at 70 rad/s with 1.2 kW). A design at 140 rad/s without load does not stabilize that case.
 
-pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
+pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 addpath(fileparts(mfilename('fullpath')));
 main
 mainDir = fileparts(which('LQGI_run_William'));
@@ -87,4 +87,4 @@ fprintf('all cases stable: %d, worst min|1+L| = %.3f (need >= 0.5)\n', allStable
 
 %% ---------------- competition file ----------------
 save(fullfile(mainDir, saveFile), 'ISCS_Ad', 'ISCS_Bd', 'ISCS_Cd', 'ISCS_Dd', 'ISCS_Tu', 'ISCS_Ty');
-fprintf('saved %s (test it with Bench_run_William.m)\n', saveFile);
+fprintf('saved %s (test it with run_test or test_controller in M3 Controller/_Testing)\n', saveFile);

@@ -11,7 +11,7 @@ function R = robust_test(files, opt)
 %   R = robust_test({'controller1_Jeremie.mat','controller1_William.mat'})        all tests, comparison table
 %   R = robust_test('controller1_Jeremie.mat', quick=true)                        3 profiles only (faster)
 %   Options: seeds (1:10), nscale (1.5), du_min (-30), w_low (90), quick (false), P_on (1200)
-%   Runs on a private copy of the shared bench (Bench_ISCS_Jeremie.slx, created in this folder on first use; the only
+%   Runs on a private copy of the shared bench (Bench_ISCS_Robust.slx in M4 Competition/models, created on first use; the only
 %   change is the controller initial state, which accepts controllers with extra states). Shared files are not modified.
 %   Run time: about 40 simulations per controller (2-4 min each controller).
 arguments
@@ -24,15 +24,16 @@ arguments
     opt.quick  (1,1) logical = false
 end
 here = fileparts(mfilename('fullpath'));
+root = fileparts(fileparts(here));   m3 = fullfile(root, 'M3 Controller');   modelDir = fullfile(root, 'M4 Competition', 'models');
 pd = fullfile(fileparts(fileparts(here)), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});
-pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   addpath(here);
+pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   addpath(here);
 if opt.quick, opt.seeds = 1:3; end
 files = cellstr(files);
 
 % private bench model
-mdl = 'Bench_ISCS_Jeremie';
-if ~isfile(fullfile(here, [mdl '.slx']))
-    load_system('Bench_ISCS');   save_system('Bench_ISCS', fullfile(here, [mdl '.slx']));
+mdl = 'Bench_ISCS_Robust';
+if ~isfile(fullfile(modelDir, [mdl '.slx']))
+    load_system('Bench_ISCS');   save_system('Bench_ISCS', fullfile(modelDir, [mdl '.slx']));
     set_param([mdl '/ISCS'], 'InitialCondition', 'zeros(size(ISCS_Ad,1),1)');   save_system(mdl);
     fprintf('created %s.slx (copy of Bench_ISCS.slx)\n', mdl);
 end
@@ -48,9 +49,9 @@ P = {'Theta_e',0.85,'Theta-15%'; 'Theta_e',1.25,'Theta+25%'; 'alpha1',1.2,'alpha
      'Vm',0.6,'Vm x0.6'; 'Vm',1.5,'Vm x1.5'; 'eta0',0.9,'eta0-10%'; 'beta0',1.3,'beta0+30%'; 'gamma0',0.9,'gamma0-10%'};
 sh = @(s) mod(s*7919*13, N);                                           % noise offset of profile s
 for f = 1:numel(files)
-    file = findFile(files{f}, fileparts(here));   c = load(file);   [~, nm] = fileparts(file);   clear r
+    file = findFile(files{f}, m3);   c = load(file);   [~, nm] = fileparts(file);   clear r
     fprintf('\n=== %s ===\n', nm);
-    init = initFor(c, m, Mb, here);
+    init = initFor(c, m, Mb, m3);
     base = struct('m',m,'c',c,'ident',ident0,'init',init,'Lm',Lm,'noise0',noise0,'opt',opt,'mdl',mdl);
     % 1. performance
     for i = 1:numel(opt.seeds), r(i) = runOne(base, opt.seeds(i), opt.nscale, sh(opt.seeds(i)), ident0, 0, 0); end %#ok<AGROW>
@@ -146,11 +147,11 @@ C = [zeros(1,n+k-1) 1; Cd(2,:) zeros(1,k)];   D = [0; Dd(2)];
 Ad = A;  Bd = B;  Cd = C;  Dd = D;
 end
 
-function init = initFor(c, m, Mb, here)
+function init = initFor(c, m, Mb, m3)
 % plant initial state at the controller's nominal point (own linearizations first, then LinModels_bench.mat)
 cand = Mb;
-if isfile(fullfile(here,'LinModels_Jeremie.mat'))
-    J = load(fullfile(here,'LinModels_Jeremie.mat')).LM;
+if isfile(fullfile(m3,'Jeremie','LinModels_Jeremie.mat'))
+    J = load(fullfile(m3,'Jeremie','LinModels_Jeremie.mat')).LM;
     for i = 1:numel(J), cand(end+1).omega_e_nom = J(i).omega_e_nom; cand(end).delta_u_nom = J(i).delta_u_nom; cand(end).p_m_nom = J(i).p_m_nom; cand(end).Q_nom = J(i).Q_nom; end %#ok<AGROW>
 end
 d = abs([cand.omega_e_nom] - c.ISCS_Ty) + 1e3*([cand.delta_u_nom] ~= c.ISCS_Tu(2,2));   [~, k] = min(d);

@@ -3,7 +3,7 @@
 % Controller files: competition format (ISCS_Ad, ISCS_Bd, ISCS_Cd, ISCS_Dd, ISCS_Tu, ISCS_Ty).
 % A bare file name is found in any personal folder of M3 Controller; otherwise give the full path.
 
-addpath(fullfile(fileparts(mfilename('fullpath')),'functions'));             % so that test_controller is found from any current folder
+addpath(fileparts(mfilename('fullpath')));   % so that test_controller is found from any current folder
 
 %% ---------------- 1. which controller(s) ----------------
 files = {'controller1_William.mat'};                    % one file, or several for a comparison table, e.g.

@@ -14,6 +14,8 @@ function fig = live_test(ctrlFile, opt)
 %                        being recorded, so you can tick them later and see the history of the sliding window.
 %   The speed measurement carries the noise recorded on the test bench. The plant is Engine_Plant_Live.slx (bench-identified parameters).
 %   Hint: below about 85 rad/s a load step can stall the model (speed < 50 rad/s is marked in the status line).
+%   Observer error: if the controller comes with its observer matrices (Aobs, Bobs, Cobs, Dobs, Obs_Cy, saved in the controller file or
+%   in <name>_observer.mat), the window uses Observer_Test_Live.slx and adds a graph with e_obs = omega_e,obs - omega_e,meas.
 %   Offline tests with the cost J: run_test.m / test_controller.m.
 arguments
     ctrlFile
@@ -24,7 +26,7 @@ arguments
     opt.window   (1,1) double = 40
 end
 here = fileparts(mfilename('fullpath'));
-pd = fullfile(fileparts(fileparts(here)), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
+pd = fullfile(fileparts(fileparts(here)), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 
 %% controller file (a bare name is searched in the personal folders of M3 Controller)
 ctrlFile = char(ctrlFile);
@@ -43,6 +45,15 @@ for i = 1:size(need,1)
     if ~isfield(c, need{i,1}) || ~isequal(size(c.(need{i,1})), need{i,2}), error('%s: variable %s missing or not %s.', ctrlFile, need{i,1}, mat2str(need{i,2})); end
 end
 
+%% optional observer data: Aobs, Bobs, Cobs, Dobs, Obs_Cy (saved by the design script in the controller file or in <name>_observer.mat beside it)
+% With it the window runs Observer_Test_Live.slx (Bench_Live plus a copy of the observer) and shows the observer error
+% e_obs = omega_e_obs - omega_e_meas; without it the plain Bench_Live.slx is used.
+obsNames = {'Aobs','Bobs','Cobs','Dobs','Obs_Cy'};   O = c;
+obsFile = fullfile(fileparts(ctrlFile), [nm_of(ctrlFile) '_observer.mat']);
+if ~all(isfield(O, obsNames)) && isfile(obsFile), O = load(obsFile); end
+hasObs = all(isfield(O, obsNames));
+if hasObs && ~isequal(size(O.Obs_Cy), [1 size(c.ISCS_Ad,1)-1]), error('Obs_Cy must be 1x%d (observer states of the controller).', size(c.ISCS_Ad,1)-1); end
+
 %% workspace of the models (same set-up as test_controller.m)
 m  = getMain();                                   % constants, limits, simcfg, init, data as built by main.m
 S  = load('LinModels_bench.mat');   M = S.M;   Lm = load('LinModel_bench.mat');
@@ -59,9 +70,10 @@ V = struct('data',data, 'init',init, 'ident',S.ident, 'constants',m.constants, '
            'ISCS_Ad',c.ISCS_Ad, 'ISCS_Bd',c.ISCS_Bd, 'ISCS_Cd',c.ISCS_Cd, 'ISCS_Dd',c.ISCS_Dd, 'ISCS_Tu',c.ISCS_Tu, 'ISCS_Ty',c.ISCS_Ty, ...
            'Ts',1e-3, 'noise_ts',struct('time',[], 'signals',struct('values',noise, 'dimensions',1)), 'du_min',opt.du_min, 'P_on',opt.P_on);   % empty time vector: cyclic repetition
 f = fieldnames(V);   for i = 1:numel(f), assignin('base', f{i}, V.(f{i})); end
+if hasObs, for i = 1:numel(obsNames), assignin('base', obsNames{i}, O.(obsNames{i})); end, end
 
 %% model
-mdl = 'Bench_Live';
+mdl = 'Bench_Live';   if hasObs, mdl = 'Observer_Test_Live'; end
 if bdIsLoaded(mdl), set_param(mdl,'SimulationCommand','stop'); close_system(mdl,0); end
 load_system(mdl);
 w0 = min(max(round(c.ISCS_Ty), 70), 200);
@@ -80,10 +92,15 @@ sig = { 'speed', 'speed \omega_e',            1, [0.85 0.10 0.10], true
         'mdb',   'air flow engine',           6, [0.85 0.33 0.10], false
         'Pl',    'load power P_l',            7, [0.5 0.5 0.5],    true };
 axTitle = {'Speed [rad/s]', 'Throttle [%]', 'Ignition retardation [degCA]', 'Manifold pressure [kPa]', 'Torque [Nm]', 'Air mass flow [g/s]', 'Load power [W]'};
+if hasObs        % extra graph with the observer error, below the speed graph's signals
+    sig = [sig(1:3,:); {'eobs', 'observer error (\omega_{e,obs} - \omega_{e,meas})', 8, [0 0.45 0.74], true}; sig(4:end,:)];
+    axTitle{end+1} = 'Observer error [rad/s]';
+end
 nS = size(sig,1);   nA = numel(axTitle);
 
 %% window: controls left, graphs right
-st = struct('model',mdl, 'rand_on',opt.rand_on, 'rand_off',opt.rand_off, 'next',inf, 'win',opt.window, 'du_nom',c.ISCS_Tu(2,2), 'Pon',opt.P_on, 'sig',{sig}, 'axTitle',{axTitle});
+obsCy = [];   if hasObs, obsCy = O.Obs_Cy; end
+st = struct('model',mdl, 'rand_on',opt.rand_on, 'rand_off',opt.rand_off, 'next',inf, 'win',opt.window, 'du_nom',c.ISCS_Tu(2,2), 'Pon',opt.P_on, 'sig',{sig}, 'axTitle',{axTitle}, 'hasObs',hasObs, 'Obs_Cy',obsCy, 'ISCS_Ty',c.ISCS_Ty);
 fig = uifigure('Name', ['live_test: ' nm_of(ctrlFile)], 'Position', [40 40 1200 700]);
 G = uigridlayout(fig, [1 2]);   G.ColumnWidth = {310, '1x'};   G.Padding = [8 8 8 8];
 L = uigridlayout(G, [7 1]);   L.RowHeight = {22, 40, 40, 26, '1x', 54, 34};   L.Padding = [2 2 2 2];   L.RowSpacing = 6;
@@ -167,7 +184,7 @@ end
 
 function onTick(fig, tmr)
 if ~isvalid(fig)                                   % window gone (closed in another way): stop the simulation and remove this timer
-    try, set_param('Bench_Live', 'SimulationCommand', 'stop'); catch, end
+    for mm = {'Bench_Live', 'Observer_Test_Live'}, try, if bdIsLoaded(mm{1}), set_param(mm{1}, 'SimulationCommand', 'stop'); end, catch, end, end
     stop(tmr);   delete(tmr);   return
 end
 ud = fig.UserData;   mdl = ud.model;
@@ -189,7 +206,16 @@ try
 catch
     return
 end
-for i = 1:numel(val), addpoints(ud.ln(i), ts, val(i)); end
+e_obs = NaN;
+if ud.hasObs                      % observer estimate of the speed minus the measured speed (NaN if it cannot be read)
+    try
+        xh = readInputSourceValue(mdl, 'Sum1', 1);                      % raw observer states (deviation), before the +1 offset
+        e_obs = ud.ISCS_Ty*(1 + ud.Obs_Cy*xh(:)) - readOutportSourceValue(mdl, 'omega_e_meas');
+    catch
+    end
+    val = [val(1:3), e_obs, val(4:end)];
+end
+for i = 1:numel(val), if isfinite(val(i)), addpoints(ud.ln(i), ts, val(i)); end, end
 x = [max(0, ts - ud.win), max(ts, ud.win)];
 for a = 1:numel(ud.ax)
     if ud.ax(a).Visible ~= "on", continue, end
@@ -207,7 +233,8 @@ for a = 1:numel(ud.ax)
     ylim(ud.ax(a), [lo, hi + pad]);
 end
 if w < 50, flag = '   *** STALL: speed below 50 rad/s ***'; else, flag = ''; end
-ud.info.Text = sprintf('t = %.0f s | reference %.0f | speed %.0f rad/s | throttle %.1f %% | load %s%s', ts, r, w, u(1), ternary(on ~= 0, 'ON', 'off'), flag);
+obsTxt = '';   if ud.hasObs, obsTxt = sprintf(' | observer error %.2f rad/s', e_obs); end
+ud.info.Text = sprintf('t = %.0f s | reference %.0f | speed %.0f rad/s%s | throttle %.1f %% | load %s%s', ts, r, w, obsTxt, u(1), ternary(on ~= 0, 'ON', 'off'), flag);
 end
 
 function closePanel(fig)
@@ -230,4 +257,99 @@ function m = getMain()
 % runs main.m inside this function, so its 'clear' does not touch the caller's or the base workspace
 main
 m = struct('constants',constants, 'limits',limits, 'simcfg',simcfg, 'init',init, 'data',data);
+end
+
+function y = readOutportSourceValue(mdl,outportName)
+% Read the live value at the source port connected to a top-level Outport.
+% This follows the same route verified in the MATLAB debugging commands.
+
+outportBlock = [mdl '/' outportName];
+if getSimulinkBlockHandle(outportBlock) == -1
+    error('Outport block "%s" was not found.',outportBlock);
+end
+
+ph = get_param(outportBlock,'PortHandles');
+if isempty(ph.Inport)
+    error('Outport "%s" has no input port.',outportBlock);
+end
+
+lineHandle = get_param(ph.Inport(1),'Line');
+if isempty(lineHandle) || lineHandle == -1
+    error('Outport "%s" is not connected.',outportBlock);
+end
+
+srcPort = get_param(lineHandle,'SrcPortHandle');
+srcBlock = get_param(lineHandle,'SrcBlockHandle');
+if isempty(srcBlock) || srcBlock == -1 || isempty(srcPort) || srcPort == -1
+    error('Could not identify the source of Outport "%s".',outportBlock);
+end
+
+ports = get_param(srcBlock,'PortHandles');
+portIndex = find(ports.Outport == srcPort,1,'first');
+if isempty(portIndex)
+    error('Source output port for "%s" could not be identified.',outportName);
+end
+
+rt = get_param(srcBlock,'RuntimeObject');
+if isempty(rt)
+    error('RuntimeObject of source block "%s" is empty. Is the simulation running?', ...
+        getfullname(srcBlock));
+end
+
+y = double(rt.OutputPort(portIndex).Data);
+if isempty(y) || any(~isfinite(y(:)))
+    error('Source signal "%s" contains empty or non-finite values.',outportName);
+end
+end
+
+
+function y = readInputSourceValue(mdl,blockName,inputIndex)
+% Read the live signal feeding one input port of a block.
+% This follows the input line to its source block/port and then reads the
+% source RuntimeObject through its block handle. This is the same access
+% route that successfully read Observer -> Sum1 input 1 during diagnosis.
+
+targetBlock = [mdl '/' blockName];
+if getSimulinkBlockHandle(targetBlock) == -1
+    error('Block "%s" was not found.',targetBlock);
+end
+
+ph = get_param(targetBlock,'PortHandles');
+if inputIndex < 1 || inputIndex > numel(ph.Inport)
+    error('Block "%s" has no input port %d.',targetBlock,inputIndex);
+end
+
+lineHandle = get_param(ph.Inport(inputIndex),'Line');
+if isempty(lineHandle) || lineHandle == -1
+    error('Input port %d of block "%s" is not connected.', ...
+        inputIndex,targetBlock);
+end
+
+srcPort = get_param(lineHandle,'SrcPortHandle');
+srcBlock = get_param(lineHandle,'SrcBlockHandle');
+if isempty(srcBlock) || srcBlock == -1 || isempty(srcPort) || srcPort == -1
+    error('Could not identify the source connected to %s input %d.', ...
+        targetBlock,inputIndex);
+end
+
+ports = get_param(srcBlock,'PortHandles');
+portIndex = find(ports.Outport == srcPort,1,'first');
+if isempty(portIndex)
+    error('Could not identify the source output port for %s input %d.', ...
+        targetBlock,inputIndex);
+end
+
+% Use the source block handle (not its path string). This access pattern
+% was confirmed to work for the Observer StateSpace block in this model.
+rt = get_param(srcBlock,'RuntimeObject');
+if isempty(rt)
+    error('RuntimeObject of source block "%s" is empty.', ...
+        getfullname(srcBlock));
+end
+
+y = double(rt.OutputPort(portIndex).Data);
+if isempty(y) || any(~isfinite(y(:)))
+    error('Signal from "%s" to %s input %d is empty or non-finite.', ...
+        getfullname(srcBlock),targetBlock,inputIndex);
+end
 end

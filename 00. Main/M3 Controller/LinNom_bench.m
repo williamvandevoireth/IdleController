@@ -4,7 +4,7 @@
 %   - finds u_alpha_nom automatically so that the steady-state speed is omega_target
 %   - checks that the nominal point is an equilibrium of Engine_Plant_Norm
 %   - prints eigenvalues, singular values and condition numbers, saves the matrices
-pd = fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
+pd = fullfile(fileparts(fileparts(mfilename('fullpath'))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 main;
 ident = load('ident_fit_bench.mat').ident;      % parameters identified on studentId_0002/0003
 omega_target = 140;                             % rad/s  linearization speed

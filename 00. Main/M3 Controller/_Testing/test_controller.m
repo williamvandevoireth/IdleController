@@ -47,7 +47,7 @@ arguments
     opt.separate (1,1) logical = true
 end
 here = fileparts(mfilename('fullpath'));
-pd = fullfile(fileparts(fileparts(here)), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
+pd = fullfile(fileparts(fileparts(here)), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));   % milestone folders with their functions and models
 
 if iscell(ctrlFile) || (isstring(ctrlFile) && numel(ctrlFile) > 1)       % several files: same scenario, table
     files = cellstr(ctrlFile);  opt.plot = false;

@@ -10,7 +10,7 @@
 % The plant is linearized here at the design point (90 rad/s, -30 degCA), because LinModels_bench.mat only holds -7 and -15 degCA.
 % Run time: about 2-4 minutes (5 steady-state searches); the linear models are cached in LinModels_Jeremie.mat.
 
-pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models')];   addpath(strjoin(pd(isfolder(pd)), pathsep));
+pd = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), {'M1 Model','M2 Identification','M3 Controller','M4 Competition'});   pd = [pd, fullfile(pd,'functions'), fullfile(pd,'models'), fullfile(pd,'_Models'), fullfile(pd,'_Testing')];   addpath(strjoin(pd(isfolder(pd)), pathsep));
 main
 myDir = fileparts(mfilename('fullpath'));
 ident = load('ident_fit_bench.mat').ident;          % parameters identified on our bench recordings
